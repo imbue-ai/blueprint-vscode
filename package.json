@@ -1,0 +1,273 @@
+{
+  "name": "imbue-blueprint",
+  "displayName": "Imbue Blueprint",
+  "description": "Multiple-choice planning for coding agents",
+  "version": "1.0.0",
+  "publisher": "Imbue",
+  "license": "AGPL-3.0-only",
+  "icon": "resources/icon.png",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/imbue-ai/blueprint-vscode.git"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "blueprint-sidebar",
+          "title": "Blueprint",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "blueprint-sidebar": [
+        {
+          "type": "webview",
+          "id": "blueprint.sidebarView",
+          "name": "Blueprint"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "blueprint.resetOnboarding",
+        "title": "Reset onboarding",
+        "category": "Blueprint"
+      },
+      {
+        "command": "blueprint.editFeedback",
+        "title": "Submit",
+        "enablement": "!commentIsEmpty"
+      },
+      {
+        "command": "blueprint.deleteFeedback",
+        "title": "Delete",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "blueprint.addFeedbackFromSelection",
+        "title": "Add feedback on selection"
+      },
+      {
+        "command": "blueprint.newSpec",
+        "title": "New plan",
+        "category": "Blueprint",
+        "icon": "$(add)"
+      },
+      {
+        "command": "blueprint.openExistingSpec",
+        "title": "Open existing plan",
+        "category": "Blueprint",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "blueprint.openSettings",
+        "title": "Settings",
+        "category": "Blueprint",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "blueprint.returnFromView",
+        "title": "Back",
+        "category": "Blueprint",
+        "icon": "$(arrow-left)"
+      },
+      {
+        "command": "blueprint.openSpecEditor",
+        "title": "Show plan",
+        "category": "Blueprint",
+        "icon": "$(go-to-file)"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "blueprint.resetOnboarding",
+          "when": "true"
+        },
+        {
+          "command": "blueprint.editFeedback",
+          "when": "false"
+        },
+        {
+          "command": "blueprint.deleteFeedback",
+          "when": "false"
+        },
+        {
+          "command": "blueprint.addFeedbackFromSelection",
+          "when": "false"
+        },
+        {
+          "command": "blueprint.newSpec",
+          "when": "false"
+        },
+        {
+          "command": "blueprint.openExistingSpec",
+          "when": "false"
+        },
+        {
+          "command": "blueprint.openSettings",
+          "when": "false"
+        },
+        {
+          "command": "blueprint.returnFromView",
+          "when": "false"
+        },
+        {
+          "command": "blueprint.openSpecEditor",
+          "when": "false"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "blueprint.returnFromView",
+          "when": "view == blueprint.sidebarView && (blueprint.screen == settings || blueprint.screen == templateEditor)",
+          "group": "navigation@1"
+        },
+        {
+          "command": "blueprint.newSpec",
+          "when": "view == blueprint.sidebarView && blueprint.screen =~ /^(promptRefinement|specEditing)$/",
+          "group": "navigation@2"
+        },
+        {
+          "command": "blueprint.openExistingSpec",
+          "when": "view == blueprint.sidebarView && blueprint.screen =~ /^(prompt|promptRefinement|specEditing)$/",
+          "group": "navigation@3"
+        },
+        {
+          "command": "blueprint.openSettings",
+          "when": "view == blueprint.sidebarView && blueprint.screen != settings && blueprint.screen != templateEditor && blueprint.screen != onboarding",
+          "group": "navigation@5"
+        },
+        {
+          "command": "blueprint.openSpecEditor",
+          "when": "view == blueprint.sidebarView && blueprint.screen == specEditing && blueprint.specFileReady",
+          "group": "navigation@4"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "blueprint.addFeedbackFromSelection",
+          "when": "resourceScheme == blueprint-spec && editorHasSelection",
+          "group": "blueprint@1"
+        }
+      ],
+      "comments/commentThread/title": [
+        {
+          "command": "blueprint.deleteFeedback",
+          "group": "navigation",
+          "when": "commentController == blueprint-feedback && commentThread == feedback"
+        }
+      ],
+      "comments/commentThread/context": [
+        {
+          "command": "blueprint.editFeedback",
+          "group": "inline@1",
+          "when": "commentController == blueprint-feedback"
+        }
+      ]
+    },
+    "configuration": [
+      {
+        "title": "General",
+        "properties": {
+          "blueprint.claudePath": {
+            "type": "string",
+            "default": "",
+            "description": "Path to the Claude CLI executable. Leave empty to auto-detect.",
+            "order": 0
+          },
+          "blueprint.model": {
+            "type": "string",
+            "default": "claude-sonnet-4-6",
+            "enum": [
+              "claude-sonnet-4-6",
+              "claude-opus-4-6"
+            ],
+            "enumItemLabels": [
+              "Sonnet 4.6",
+              "Opus 4.6"
+            ],
+            "description": "Claude model to use for plan generation.",
+            "order": 1
+          },
+          "blueprint.promptTemplates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "prompt": {
+                  "type": "string"
+                },
+                "filename": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name",
+                "prompt",
+                "filename"
+              ]
+            },
+            "default": [],
+            "description": "Named prompt templates for plan generation.",
+            "order": 1
+          }
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "build": "node esbuild.config.mjs",
+    "build:watch": "node esbuild.config.mjs --watch",
+    "vscode:prepublish": "npm run clean && npm run build",
+    "package": "vsce package --no-dependencies -o ./dist/blueprint.vsix",
+    "clean": "rm -rf dist",
+    "lint": "eslint src/ --max-warnings 0",
+    "format": "eslint --fix src/",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run lint && npm run typecheck"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.97",
+    "@lit/react": "^1.0.0",
+    "@phosphor-icons/react": "^2.1.10",
+    "lit": "^3.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.10.5",
+    "@types/react": "^18.2.48",
+    "@types/react-dom": "^18.2.18",
+    "@types/vscode": "^1.85.0",
+    "@vscode-elements/elements": "^1.16.0",
+    "@vscode-elements/react-elements": "^2.4.0",
+    "@vscode/vsce": "^3.0.0",
+    "esbuild": "^0.20.0",
+    "eslint": "^10.0.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "eslint-plugin-unused-imports": "^4.4.1",
+    "prettier": "^3.8.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-markdown": "^9.1.0",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.56.1"
+  }
+}

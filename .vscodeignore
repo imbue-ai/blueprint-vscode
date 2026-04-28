@@ -1,0 +1,17 @@
+.vscode/**
+.blueprint/**
+.github/**
+node_modules/**
+src/**
+temp/**
+*.ts
+*.tsx
+tsconfig.json
+esbuild.config.mjs
+eslint.config.mjs
+.prettierrc
+.gitignore
+docs/**
+specs/**
+package-lock.json
+CLAUDE.md
