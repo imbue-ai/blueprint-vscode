@@ -10,7 +10,7 @@ The extension shows an onboarding screen the first time a user opens it. The onb
    - **Sections** — a reorderable list of plan sections seeded from `DEFAULT_TEMPLATE_SECTIONS` (Overview, Expected behavior). A "+" menu adds presets or a blank custom section. Each section has inline title/description editing, up/down reorder, and delete.
    - **Writing style** — checkboxes for `bullet` and `diagrams` styles, plus a `concise` / `comprehensive` depth toggle.
    - **Model** — radio selection for `claude-sonnet-4-6` or `claude-opus-4-6`; persisted to the `blueprint.model` setting.
-4. The user configures the template and clicks **Get started**.
+4. The user configures the template and clicks **Get started**. If any section has an empty title or description, the click is intercepted and the sections group header surfaces an error ("Section title cannot be empty" / "Section description cannot be empty"); the click only proceeds once every section has both fields filled.
 5. `OnboardingState.complete()` calls `generateDefaultTemplate(data)` which builds the prompt via `buildPromptFromConfig`, writes a single "Default" `PromptTemplate` (with `mode: 'structured'` and `filename: 'plan.md'`) to `blueprint.promptTemplates`, sets `blueprint.onboardingComplete`, and transitions to `PromptState`.
 
 ## Preset Sections

@@ -1,4 +1,5 @@
 import { VscodeButton } from '@vscode-elements/react-elements';
+import { useState } from 'react';
 
 import type { AppScreen, TemplateEditorMode } from '../../types/screens';
 import { CollapsibleGroup } from '../components/CollapsibleGroup';
@@ -7,6 +8,7 @@ import {
   ContentGroupBody,
   getSectionDescription,
   getStyleDescription,
+  sectionInputsValid,
   StyleGroupBody,
 } from '../components/TemplateFormFields';
 import { postMessage } from '../useVSCodeMessaging';
@@ -21,10 +23,19 @@ interface Props {
 
 export function TemplateEditorScreen({ screen }: Props) {
   const { name, filename, mode, data, rawPrompt, isCreate } = screen;
+  const [submitAttempted, setSubmitAttempted] = useState(false);
   const hasSections = data.sections.length > 0;
-  const sectionDesc = getSectionDescription(data.sections);
+  const sectionDesc = getSectionDescription(data.sections, submitAttempted);
   const canSave =
     !!name.trim() && !!filename.trim() && /\.md$/i.test(filename.trim()) && (mode === 'freeform' || hasSections);
+
+  const handleSave = () => {
+    if (mode === 'structured' && !sectionInputsValid()) {
+      setSubmitAttempted(true);
+      return;
+    }
+    postMessage({ type: 'saveTemplateEditor' });
+  };
 
   return (
     <div
@@ -61,11 +72,7 @@ export function TemplateEditorScreen({ screen }: Props) {
         )}
 
         <div style={{ marginTop: 12, marginBottom: 12, flexShrink: 0 }}>
-          <VscodeButton
-            onClick={() => postMessage({ type: 'saveTemplateEditor' })}
-            disabled={!canSave}
-            style={{ width: '100%' }}
-          >
+          <VscodeButton onClick={handleSave} disabled={!canSave} style={{ width: '100%' }}>
             {isCreate ? 'Create template' : 'Save template'}
           </VscodeButton>
         </div>

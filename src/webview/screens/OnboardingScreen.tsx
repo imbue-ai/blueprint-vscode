@@ -1,4 +1,5 @@
 import { VscodeButton } from '@vscode-elements/react-elements';
+import { useState } from 'react';
 
 import type { TemplateConfig } from '../../types/onboarding';
 import type { AppScreen } from '../../types/screens';
@@ -9,6 +10,7 @@ import {
   ContentGroupBody,
   getSectionDescription,
   getStyleDescription,
+  sectionInputsValid,
   StyleGroupBody,
 } from '../components/TemplateFormFields';
 import { postMessage } from '../useVSCodeMessaging';
@@ -30,8 +32,17 @@ function getModelDescription(modelId: string): string {
 
 export function OnboardingScreen({ screen }: Props) {
   const data: TemplateConfig = screen.data;
+  const [submitAttempted, setSubmitAttempted] = useState(false);
   const hasSections = data.sections.length > 0;
-  const sectionDesc = getSectionDescription(data.sections);
+  const sectionDesc = getSectionDescription(data.sections, submitAttempted);
+
+  const handleSubmit = () => {
+    if (!sectionInputsValid()) {
+      setSubmitAttempted(true);
+      return;
+    }
+    postMessage({ type: 'completeOnboarding' });
+  };
 
   return (
     <div
@@ -79,11 +90,7 @@ export function OnboardingScreen({ screen }: Props) {
         </div>
 
         <div style={{ marginTop: 12, marginBottom: 12 }}>
-          <VscodeButton
-            onClick={() => postMessage({ type: 'completeOnboarding' })}
-            disabled={!hasSections}
-            style={{ width: '100%' }}
-          >
+          <VscodeButton onClick={handleSubmit} disabled={!hasSections} style={{ width: '100%' }}>
             Get started
           </VscodeButton>
         </div>
