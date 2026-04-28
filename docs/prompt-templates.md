@@ -52,6 +52,8 @@ The editor has two modes:
 
 Templates created during onboarding store `config` and open in structured mode. Switching `mode` is part of the saved template state.
 
+In structured mode, the save button stays clickable when sections have empty titles or descriptions, but clicking it does not save — instead, the sections group header surfaces an error ("Section title cannot be empty" / "Section description cannot be empty"). The error is gated on a local `submitAttempted` flag, so it only appears after the first save attempt and clears once all sections are valid.
+
 ## Template Selection
 
 Template selection lives in the Settings view: each template row in `TemplateListItem` is a radio-style selector, and clicking a row sends `setSpecTemplate { id }` which updates `blueprint.selectedTemplateId` in workspace state. `PromptState` reads the persisted id when submitting; the prompt screen itself does not expose a template UI.

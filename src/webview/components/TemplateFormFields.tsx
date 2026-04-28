@@ -7,8 +7,16 @@ import { AddSectionMenu } from './AddSectionMenu';
 import { Textarea } from './InputComponents';
 import { SectionItem } from './SectionItem';
 
-export function getSectionDescription(sections: SpecSection[]): { text: string; isError: boolean } {
+export function getSectionDescription(
+  sections: SpecSection[],
+  submitAttempted = false,
+): { text: string; isError: boolean } {
   if (sections.length === 0) return { text: 'At least one section is required', isError: true };
+  if (submitAttempted) {
+    if (sections.some((s) => !s.title.trim())) return { text: 'Section title cannot be empty', isError: true };
+    if (sections.some((s) => !s.description.trim()))
+      return { text: 'Section description cannot be empty', isError: true };
+  }
   const isDefault =
     sections.length === DEFAULT_TEMPLATE_SECTIONS.length &&
     sections.every((s, i) => s.title === DEFAULT_TEMPLATE_SECTIONS[i].title);
@@ -17,6 +25,17 @@ export function getSectionDescription(sections: SpecSection[]): { text: string; 
   const preview = names.slice(0, 3).join(', ');
   const extra = names.length - 3;
   return { text: extra > 0 ? `${prefix}: ${preview} + ${extra} more` : `${prefix}: ${preview}`, isError: false };
+}
+
+// Validates the live DOM values of section title/description inputs. SectionItem keeps drafts in
+// local state and only commits to the host on blur, so checking React state at submit time reads
+// stale values when a click fires immediately after a blur (postMessage round-trip hasn't landed).
+// Reading the DOM avoids that race.
+export function sectionInputsValid(): boolean {
+  const titles = Array.from(document.querySelectorAll<HTMLInputElement>('[data-section-title-input]'));
+  if (titles.some((el) => !el.value.trim())) return false;
+  const descs = Array.from(document.querySelectorAll<HTMLTextAreaElement>('[data-section-description-input]'));
+  return !descs.some((el) => !el.value.trim());
 }
 
 export function getStyleDescription(styles: SpecStyle[], depth: string): string {

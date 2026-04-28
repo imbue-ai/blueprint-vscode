@@ -135,6 +135,7 @@ export function SectionItem({ section, index, total, siblingTitles }: Props) {
       <div style={{ minWidth: 0, paddingRight: 70 }}>
         <input
           ref={titleRef}
+          data-section-title-input=""
           value={titleDraft}
           onChange={(e) => setTitleDraft(e.target.value)}
           onFocus={() => setTitleFocused(true)}
@@ -158,6 +159,7 @@ export function SectionItem({ section, index, total, siblingTitles }: Props) {
 
         <textarea
           ref={descRef}
+          data-section-description-input=""
           rows={1}
           value={descDraft}
           onChange={(e) => setDescDraft(e.target.value)}
