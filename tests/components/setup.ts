@@ -46,6 +46,14 @@ function makeStub(tag: string): ComponentType<PropsWithChildren<Record<string, u
   return Stub;
 }
 
+// `webview/components/InputComponents.ts` builds Lit-based custom elements at import time
+// (`customElements.define`), which fails in happy-dom for the same ElementInternals reason.
+// Stub them to native HTML inputs so happy-dom and RTL handle them normally.
+vi.mock('../../src/webview/components/InputComponents', () => ({
+  Textarea: makeStub('textarea'),
+  Textfield: makeStub('input'),
+}));
+
 vi.mock('@vscode-elements/react-elements', () => ({
   VscodeButton: makeStub('vscode-button'),
   VscodeTextarea: makeStub('vscode-textarea'),
