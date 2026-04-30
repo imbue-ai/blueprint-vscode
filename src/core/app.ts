@@ -4,6 +4,7 @@ import type { ExtensionData } from '../types/data';
 import type { SidebarOutMessage } from '../types/messages';
 import type { AppScreen } from '../types/screens';
 import { findClaudePath, validateClaudePath } from '../utils/findClaude';
+import { type ClaudeSessionFactory, createLiveSessionFactory } from './session';
 import { OnboardingState } from './states/onboarding';
 import { PromptState } from './states/prompt';
 import { SettingsView } from './views/settings';
@@ -30,6 +31,7 @@ export interface AppContext {
   claudePath: string;
   workingDir: string;
   context: vscode.ExtensionContext;
+  createSession: ClaudeSessionFactory;
 }
 
 export class App {
@@ -46,7 +48,12 @@ export class App {
   private freshSpecEntry = false;
   readonly ctx: AppContext;
 
-  constructor(onUpdate: OnUpdateFn, openSpec: OpenSpecFn, context: vscode.ExtensionContext) {
+  constructor(
+    onUpdate: OnUpdateFn,
+    openSpec: OpenSpecFn,
+    context: vscode.ExtensionContext,
+    sessionFactory?: ClaudeSessionFactory,
+  ) {
     this.onUpdate = onUpdate;
     this.openSpecFn = openSpec;
 
@@ -67,10 +74,13 @@ export class App {
       }
     }
 
+    const resolvedClaudePath = claudePath ?? '';
+    const resolvedWorkingDir = workspaceFolder ?? '';
     this.ctx = {
-      claudePath: claudePath ?? '',
-      workingDir: workspaceFolder ?? '',
+      claudePath: resolvedClaudePath,
+      workingDir: resolvedWorkingDir,
       context,
+      createSession: sessionFactory ?? createLiveSessionFactory(resolvedWorkingDir, resolvedClaudePath),
     };
 
     const needsOnboarding = !context.globalState.get<boolean>('blueprint.onboardingComplete', false);
@@ -179,8 +189,19 @@ export class App {
   }
 
   broadcast(): void {
-    this.onUpdate(this.getData());
+    const data = this.getData();
+    this.onUpdate(data);
+    for (const listener of this.dataListeners) listener(data);
     this.freshSpecEntry = false;
+  }
+
+  private dataListeners: ((data: ExtensionData) => void)[] = [];
+
+  addDataListener(listener: (data: ExtensionData) => void): () => void {
+    this.dataListeners.push(listener);
+    return () => {
+      this.dataListeners = this.dataListeners.filter((l) => l !== listener);
+    };
   }
 
   setState(newState: AppState): void {

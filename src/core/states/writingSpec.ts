@@ -13,7 +13,7 @@ import {
   SPEC_PROMPT,
   wrapTemplatePrompt,
 } from '../prompts';
-import { ClaudeSession, RateLimitError } from '../session';
+import { type ClaudeSession, RateLimitError } from '../session';
 import { SPEC_START_MARKER, SPEC_WRITING_SYSTEM_PROMPT } from '../systemPrompts';
 import { handleJumpToLineNumber } from '../utils/panelQuestionHandlers';
 import { StartingEditorAgentState } from './startingEditorAgent';
@@ -78,11 +78,7 @@ export class WritingSpecState implements AppState {
       if (this.interrupted) return;
     }
 
-    this.session = new ClaudeSession({
-      claudePath: this.ctx.claudePath,
-      workingDir: this.ctx.workingDir,
-      name: 'Feature slug',
-    });
+    this.session = this.ctx.createSession('Feature slug');
 
     try {
       const feature = await generateFeatureSlug(this.session, this.prompt, this.ctx.workingDir);

@@ -4,7 +4,7 @@ import { cleanupSpecTemplateFile, writeSpecTemplateFile } from '../../utils/spec
 import { createToolCallStreamItem, extractToolUseFromContent } from '../../utils/toolUse';
 import type { App, AppContext, AppState } from '../app';
 import { getEditingPrompt } from '../prompts';
-import { ClaudeSession, RateLimitError } from '../session';
+import { type ClaudeSession, RateLimitError } from '../session';
 import { SnapshotManager } from '../snapshotManager';
 import { getSpecEditingSystemPrompt } from '../systemPrompts';
 import { handleJumpToLineNumber } from '../utils/panelQuestionHandlers';
@@ -54,7 +54,7 @@ export class StartingEditorAgentState implements AppState {
   private async startEditor(app: App): Promise<void> {
     this.editingSession = this.warmedUpSession
       ? this.warmedUpSession.fork('Editor agent')
-      : new ClaudeSession({ claudePath: this.ctx.claudePath, workingDir: this.ctx.workingDir, name: 'Editor agent' });
+      : this.ctx.createSession('Editor agent');
 
     try {
       if (this.specTemplate) {
@@ -87,11 +87,7 @@ export class StartingEditorAgentState implements AppState {
       if (this.interrupted) return;
 
       // Create questions session; generation runs in the background after transition
-      const questionsSession = new ClaudeSession({
-        claudePath: this.ctx.claudePath,
-        workingDir: this.ctx.workingDir,
-        name: 'Editor questions',
-      });
+      const questionsSession = this.ctx.createSession('Editor questions');
       this.questionsSession = questionsSession;
 
       this.cleanupSpecTemplate();

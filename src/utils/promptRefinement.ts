@@ -1,6 +1,5 @@
 import type { AppContext } from '../core/app';
 import { getRefinementPrompt } from '../core/prompts';
-import { ClaudeSession } from '../core/session';
 import { PROMPT_REFINEMENT_SYSTEM_PROMPT } from '../core/systemPrompts';
 
 export async function* refinePrompt(
@@ -8,11 +7,7 @@ export async function* refinePrompt(
   currentPrompt: string,
   answers: { question: string; answer: string }[],
 ): AsyncGenerator<string, string, unknown> {
-  const session = new ClaudeSession({
-    claudePath: ctx.claudePath,
-    workingDir: ctx.workingDir,
-    name: 'Prompt refinement',
-  });
+  const session = ctx.createSession('Prompt refinement');
 
   const qaPairs = answers.map((a) => `Q: ${a.question}\nA: ${a.answer}`).join('\n\n');
   const promptText = getRefinementPrompt(currentPrompt, qaPairs);
