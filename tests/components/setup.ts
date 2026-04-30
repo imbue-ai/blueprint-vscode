@@ -46,21 +46,54 @@ function makeStub(tag: string): ComponentType<PropsWithChildren<Record<string, u
   return Stub;
 }
 
+// Native form-control stubs for radio/checkbox. React's `onChange` only fires on a real `change`
+// event for native inputs — on lowercase custom elements it's just an attribute, so a synthetic
+// `fireEvent.change` doesn't reach the handler. Rendering these as native `<input>` lets tests
+// use `fireEvent.change(...)` (or `fireEvent.click` for an actual radio/checkbox) and have it
+// trigger the React onChange handler the component installed.
+function makeInputStub(type: 'radio' | 'checkbox'): ComponentType<PropsWithChildren<Record<string, unknown>>> {
+  const Stub = ({ children, ...props }: PropsWithChildren<Record<string, unknown>>) => {
+    const cleaned: Record<string, unknown> = { type, 'data-stub-tag': `vscode-${type}` };
+    for (const [k, v] of Object.entries(props)) {
+      if (v === false || v === undefined || v === null) continue;
+      cleaned[k] = v;
+    }
+    // <input> is a void element — wrap in a <label> so the choice text (passed as children) still
+    // renders alongside it. Tests can find the input via `input[type="radio"]` and the label text
+    // via the wrapping label.
+    return createElement('label', null, createElement('input', cleaned), ' ', children);
+  };
+  Stub.displayName = `InputStub(${type})`;
+  return Stub;
+}
+
 // `webview/components/InputComponents.ts` builds Lit-based custom elements at import time
 // (`customElements.define`), which fails in happy-dom for the same ElementInternals reason.
 // Stub them to native HTML inputs so happy-dom and RTL handle them normally.
-vi.mock('../../src/webview/components/InputComponents', () => ({
-  Textarea: makeStub('textarea'),
-  Textfield: makeStub('input'),
-}));
+vi.mock('../../src/webview/components/InputComponents', () => {
+  // Textfield rendered as `<input type="text">` so tests can disambiguate it from radio/checkbox
+  // inputs via `input[type="text"]`.
+  const TextfieldStub = ({ children: _, ...props }: PropsWithChildren<Record<string, unknown>>) => {
+    const cleaned: Record<string, unknown> = { type: 'text' };
+    for (const [k, v] of Object.entries(props)) {
+      if (v === false || v === undefined || v === null) continue;
+      cleaned[k] = v;
+    }
+    return createElement('input', cleaned);
+  };
+  return {
+    Textarea: makeStub('textarea'),
+    Textfield: TextfieldStub,
+  };
+});
 
 vi.mock('@vscode-elements/react-elements', () => ({
   VscodeButton: makeStub('vscode-button'),
   VscodeTextarea: makeStub('vscode-textarea'),
   VscodeTextfield: makeStub('vscode-textfield'),
-  VscodeRadio: makeStub('vscode-radio'),
+  VscodeRadio: makeInputStub('radio'),
   VscodeRadioGroup: makeStub('vscode-radio-group'),
-  VscodeCheckbox: makeStub('vscode-checkbox'),
+  VscodeCheckbox: makeInputStub('checkbox'),
   VscodeFormHelper: makeStub('vscode-form-helper'),
   VscodeIcon: makeStub('vscode-icon'),
   VscodeLabel: makeStub('vscode-label'),
