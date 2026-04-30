@@ -117,6 +117,16 @@ export function assistantText(text: string, sessionId = `sess-${nextId()}`): SDK
   } as unknown as SDKMessage;
 }
 
+export function streamMessageStart(sessionId = `sess-${nextId()}`): SDKMessage {
+  return {
+    type: 'stream_event',
+    session_id: sessionId,
+    event: { type: 'message_start', message: { id: nextId(), role: 'assistant' } },
+    parent_tool_use_id: null,
+    uuid: nextId(),
+  } as unknown as SDKMessage;
+}
+
 export function streamTextDelta(text: string, sessionId = `sess-${nextId()}`): SDKMessage {
   return {
     type: 'stream_event',
