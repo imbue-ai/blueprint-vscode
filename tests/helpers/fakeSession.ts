@@ -1,6 +1,7 @@
 import type { SDKMessage } from '@anthropic-ai/claude-agent-sdk';
 
 import type { ClaudeSession, ClaudeSessionFactory } from '../../src/core/session';
+import { RateLimitError } from '../../src/core/session';
 
 /**
  * Test double for ClaudeSession. Yields scripted SDKMessage streams.
@@ -33,6 +34,12 @@ export class FakeClaudeSession implements ClaudeSession {
     const messages = this.nextScript();
     for (const m of messages) {
       if (this.aborted) return;
+      // Mirror the real session's rate-limit-detect-and-throw so scripted rate_limit_event
+      // messages cause RateLimitError to bubble up to the calling state.
+      const msgAny = m as unknown as { type: string; rate_limit_info?: { status: string; resetsAt?: number } };
+      if (msgAny.type === 'rate_limit_event' && msgAny.rate_limit_info?.status === 'rejected') {
+        throw new RateLimitError(msgAny.rate_limit_info.resetsAt);
+      }
       yield m;
     }
   }
@@ -120,6 +127,38 @@ export function streamTextDelta(text: string, sessionId = `sess-${nextId()}`): S
       delta: { type: 'text_delta', text },
     },
     parent_tool_use_id: null,
+    uuid: nextId(),
+  } as unknown as SDKMessage;
+}
+
+export function assistantToolUse(
+  name: string,
+  input: Record<string, unknown>,
+  sessionId = `sess-${nextId()}`,
+): SDKMessage {
+  return {
+    type: 'assistant',
+    session_id: sessionId,
+    message: {
+      id: nextId(),
+      type: 'message',
+      role: 'assistant',
+      model: 'fake-model',
+      content: [{ type: 'tool_use', id: nextId(), name, input }],
+      stop_reason: 'tool_use',
+      stop_sequence: null,
+      usage: { input_tokens: 0, output_tokens: 0 },
+    },
+    parent_tool_use_id: null,
+    uuid: nextId(),
+  } as unknown as SDKMessage;
+}
+
+export function rateLimitRejected(resetsAt = Date.now() + 60_000, sessionId = `sess-${nextId()}`): SDKMessage {
+  return {
+    type: 'rate_limit_event',
+    session_id: sessionId,
+    rate_limit_info: { status: 'rejected', resetsAt },
     uuid: nextId(),
   } as unknown as SDKMessage;
 }

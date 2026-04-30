@@ -12,7 +12,7 @@
  */
 import * as assert from 'assert';
 
-import { resultDone, streamTextDelta, systemInit } from '../helpers/fakeSession';
+import { assistantToolUse, rateLimitRejected, resultDone, streamTextDelta, systemInit } from '../helpers/fakeSession';
 import { resetExtensionState, setupHarness, waitFor } from '../helpers/harness';
 
 suite('Workflow: submit prompt', () => {
@@ -148,6 +148,94 @@ suite('Workflow: submit prompt', () => {
       // The Prompt-refinement session should have been created exactly once during the round.
       const refineSessions = h.fakes.created.filter((s) => s.name === 'Prompt refinement');
       assert.strictEqual(refineSessions.length, 1, 'expected one Prompt refinement session');
+    } finally {
+      h.dispose();
+    }
+  });
+
+  /**
+   * Goal: tool-use messages from the questioning agent appear as `tool_call` entries in the
+   *   broadcast `questioningMessages` so the user sees what the agent is doing during
+   *   exploration. Pins the SDK message → on-screen tool-call rendering path that
+   *   `extractToolUseFromContent` and `createToolCallStreamItem` drive.
+   * Process: complete onboarding; script a stream that includes one assistant tool_use message
+   *   (Read foo.ts) followed by a question; submit; wait for the screen to surface a tool_call
+   *   entry; assert its name is 'Read'.
+   */
+  test('tool-use messages from the agent appear as tool_call entries on the screen', async () => {
+    const h = await setupHarness();
+    try {
+      await resetExtensionState(h.app);
+      await h.app.resetOnboarding();
+      await waitFor(() => h.screenOfType('onboarding'), 2000, 'onboarding screen');
+      h.send({ type: 'completeOnboarding' });
+      await waitFor(() => h.screenOfType('prompt'), 2000, 'prompt screen');
+
+      const sid = 'tool-test';
+      const questionJson = JSON.stringify({ text: 'What database?' });
+      h.fakes.script([
+        systemInit(sid),
+        assistantToolUse('Read', { file_path: 'src/foo.ts' }, sid),
+        streamTextDelta(`<question>\n${questionJson}\n</question>\n`, sid),
+        resultDone(sid),
+      ]);
+
+      h.send({ type: 'setPrompt', prompt: 'Build a thing' });
+      h.send({ type: 'submitSpecPrompt' });
+
+      const screen = await waitFor(
+        () => {
+          const s = h.screenOfType('promptRefinement');
+          const hasToolCall = s?.questioningMessages.some((m) => m.type === 'tool_call');
+          const hasQuestion = s?.questions.length && s.questions.length > 0;
+          return s && hasToolCall && hasQuestion ? s : null;
+        },
+        3000,
+        'tool_call entry visible alongside the question',
+      );
+
+      const toolCalls = screen.questioningMessages.filter((m) => m.type === 'tool_call');
+      assert.ok(toolCalls.length >= 1);
+      assert.strictEqual(toolCalls[0].type === 'tool_call' ? toolCalls[0].name : null, 'Read');
+    } finally {
+      h.dispose();
+    }
+  });
+
+  /**
+   * Goal: a rate-limit rejection during questioning bubbles up via `app.onRateLimit`. Pins the
+   *   propagation contract from the questioning state.
+   *
+   * SKIPPED — cross-module `instanceof RateLimitError` issue. The fake session throws a
+   *   `RateLimitError` from `out/src/core/session.js` but the GeneratingPromptQuestionsState's
+   *   catch block (running in the bundled `dist/extension.js`) uses `instanceof RateLimitError`
+   *   against a different class object, so the check fails. The handler's logic is covered by
+   *   in-process unit tests; revisit this integration test if we ever add a robust same-module
+   *   error import path (e.g. expose RateLimitError via the activate test API).
+   */
+  test.skip('rate-limit during questioning bubbles up to onRateLimit', async () => {
+    const h = await setupHarness();
+    try {
+      await resetExtensionState(h.app);
+      await h.app.resetOnboarding();
+      await waitFor(() => h.screenOfType('onboarding'), 2000, 'onboarding screen');
+      h.send({ type: 'completeOnboarding' });
+      await waitFor(() => h.screenOfType('prompt'), 2000, 'prompt screen');
+
+      const resetsAt = Date.now() + 60_000;
+      h.fakes.script([systemInit('rl'), rateLimitRejected(resetsAt, 'rl')]);
+
+      h.send({ type: 'setPrompt', prompt: 'Build a thing' });
+      h.send({ type: 'submitSpecPrompt' });
+
+      await waitFor(
+        () => {
+          const latest = h.latest();
+          return latest && latest.status === 'ok' && latest.rateLimitResetsAt !== undefined ? latest : null;
+        },
+        3000,
+        'rateLimitResetsAt set in broadcast',
+      );
     } finally {
       h.dispose();
     }
