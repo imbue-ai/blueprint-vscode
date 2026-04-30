@@ -99,6 +99,10 @@ export class OnboardingState implements AppState {
     [this.sections[idx], this.sections[targetIdx]] = [this.sections[targetIdx], this.sections[idx]];
   }
 
+  // Validation lives in the front-end (OnboardingScreen). This handler deliberately trusts
+  // whatever arrives — the back-end has no channel to surface rejection back to the user, so
+  // double-validation here would crash or silently drop input rather than fix anything. The
+  // contract is pinned by tests/onboarding/complete.test.ts ("permissive — empty sections...").
   private async complete(app: App): Promise<void> {
     await generateDefaultTemplate(this.getData());
     app.ctx.context.globalState.update('blueprint.onboardingComplete', true);
