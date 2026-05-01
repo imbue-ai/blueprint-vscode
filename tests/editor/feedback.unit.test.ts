@@ -163,6 +163,31 @@ suite('Unit: EditorReadyState — submitSpecFeedback', () => {
     assert.strictEqual(app.setStateCalls.length, 1);
     assert.ok(app.setStateCalls[0] instanceof EditingState);
   });
+
+  /**
+   * Goal: the feedback-submit path constructs `EditingState` with `consumeFeedback: true` so
+   *   the going-forward snapshot moves pending → submitted. The chat-send path takes the same
+   *   transition with `consumeFeedback: false` so the user's accumulated feedback survives.
+   *   Pins both branches at the wire level — without this split, a chat reply would silently
+   *   drop pending feedback alongside the message.
+   * Process: build a state with pending feedback; submit; peek at the produced EditingState's
+   *   `consumeFeedback`; assert true. Then build another state, set a draft, send; assert the
+   *   produced EditingState has consumeFeedback=false.
+   */
+  test('consumeFeedback is true for submit path, false for chat send', () => {
+    const submitState = makeState({ pendingFeedback: [makeFeedback('a')] });
+    const submitApp = stubApp();
+    submitState.state.handleMessage(submitApp as unknown as App, { type: 'submitSpecFeedback' });
+    const submitted = submitApp.setStateCalls[0] as unknown as { consumeFeedback: boolean };
+    assert.strictEqual(submitted.consumeFeedback, true, 'submit path should consume feedback');
+
+    const chatState = makeState({});
+    const chatApp = stubApp();
+    chatState.state.handleMessage(chatApp as unknown as App, { type: 'setDraftMessage', message: 'refine the API' });
+    chatState.state.handleMessage(chatApp as unknown as App, { type: 'sendMessage' });
+    const chatTransitioned = chatApp.setStateCalls[0] as unknown as { consumeFeedback: boolean };
+    assert.strictEqual(chatTransitioned.consumeFeedback, false, 'chat send path should preserve feedback');
+  });
 });
 
 suite('Unit: EditorReadyState — specFileChanged invalidation', () => {

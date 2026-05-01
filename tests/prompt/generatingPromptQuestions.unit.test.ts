@@ -190,6 +190,35 @@ suite('Unit: GeneratingPromptQuestionsState — continuation path inherits previ
     assert.strictEqual(screen.questions.length, 1);
     assert.strictEqual(screen.questions[0].textAnswer, 'Postgres');
   });
+
+  /**
+   * Goal: `roundCount` is anchored at construction — a continuation is round N+1, and an
+   *   initial entry is round 1. Pins `getScreen().isFirstRound` as the visible signal so the
+   *   refinement screen can hide the action buttons during the first round of streaming but
+   *   keep them visible on continuation rounds (where the user's accumulated answers should
+   *   stay actionable).
+   * Process: build a continuation with `roundCount: 1`; construct; assert isFirstRound is false
+   *   (the new state is round 2). Then build with no continuation; assert isFirstRound is true.
+   */
+  test('continuation reports isFirstRound=false; no continuation reports true', () => {
+    const continuation = {
+      session: stubSession(),
+      messages: [],
+      activeQuestions: [],
+      nextQuestionId: 0,
+      roundCount: 1,
+      answers: [{ question: 'q', answer: 'a' }],
+    };
+    const cont = new GeneratingPromptQuestionsState(stubCtx(), 'p', 'tpl', continuation);
+    const contScreen = cont.getScreen();
+    if (contScreen.type !== 'promptRefinement') return assert.fail('expected promptRefinement');
+    assert.strictEqual(contScreen.isFirstRound, false, 'continuation rolls roundCount past 1');
+
+    const initial = new GeneratingPromptQuestionsState(stubCtx(), 'p', 'tpl');
+    const initialScreen = initial.getScreen();
+    if (initialScreen.type !== 'promptRefinement') return assert.fail('expected promptRefinement');
+    assert.strictEqual(initialScreen.isFirstRound, true, 'no continuation seeds roundCount=1');
+  });
 });
 
 suite('Unit: GeneratingPromptQuestionsState — message handlers', () => {

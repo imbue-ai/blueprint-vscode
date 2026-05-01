@@ -378,4 +378,42 @@ suite('Integration: TemplateEditorView — save', () => {
     assert.strictEqual(templates[0].filename, 'plan.md');
     assert.strictEqual(app.closeViewCalls, 1);
   });
+
+  /**
+   * Goal: saving a structured-mode template (edit path) rebuilds the persisted `prompt` from
+   *   `config` via `buildPromptFromConfig`, not from the previously-saved body. Pins that the
+   *   user's section/style/depth/notes edits actually affect what the agent reads — without
+   *   this, saving an edit would silently keep the original prompt body even though the form
+   *   shows the new structure.
+   * Process: seed config with an existing template whose prompt is "STALE BODY"; instantiate
+   *   the editor on it; mutate notes; save; assert the persisted template's prompt no longer
+   *   equals "STALE BODY" and contains the new notes value.
+   */
+  test('edit-path save rebuilds the structured prompt from config', async () => {
+    const stale: PromptTemplate = {
+      id: 'tpl-edit',
+      name: 'Existing',
+      filename: 'plan.md',
+      mode: 'structured',
+      prompt: 'STALE BODY',
+      config: {
+        sections: [{ id: 's1', title: 'Overview', description: 'desc' }],
+        styles: ['bullet'],
+        depth: 'concise',
+        notes: '',
+      },
+    };
+    await setTemplates([stale]);
+
+    const view = new TemplateEditorView('tpl-edit');
+    const app = stubApp();
+    view.handleMessage(app as unknown as App, { type: 'setTemplateNotes', notes: 'BE TERSE' });
+    view.handleMessage(app as unknown as App, { type: 'saveTemplateEditor' });
+    await new Promise((r) => setTimeout(r, 100));
+
+    const templates = readTemplates();
+    const saved = templates.find((t) => t.id === 'tpl-edit')!;
+    assert.notStrictEqual(saved.prompt, 'STALE BODY', 'edit-path save must rebuild the prompt');
+    assert.ok(saved.prompt.includes('BE TERSE'), 'rebuilt prompt should include the new notes');
+  });
 });

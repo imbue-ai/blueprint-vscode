@@ -238,4 +238,30 @@ suite('Unit: EditingState — screen + lifecycle', () => {
       state.interrupt();
     });
   });
+
+  /**
+   * Goal: `nFeedback` reflects the current snapshot's `pendingFeedback.length`. Pins the
+   *   Feedback-tab badge wiring during editing — without this, the badge would silently lose
+   *   pending items the moment the user submitted a chat or feedback action and the editing
+   *   state took over rendering.
+   * Process: build a snapshot with one pending feedback item; instantiate; assert nFeedback is 1.
+   */
+  test('nFeedback reflects the snapshot pendingFeedback length', () => {
+    const mgr = new SnapshotManager();
+    const session = stubSession();
+    mgr.createSnapshot({
+      prompt: 'p',
+      specContent: '# Plan',
+      chatMessages: [],
+      streamItems: [],
+      editingSession: session,
+      submittedFeedback: [],
+      pendingFeedback: [{ id: 'fb', text: 'x', startLine: 1, endLine: 1 }],
+      questionRounds: [],
+    });
+    const state = new EditingState(stubCtx(), 'blueprint/test/plan.md', mgr, session, 'msg');
+    const screen = state.getScreen();
+    if (screen.type !== 'specEditing') return assert.fail('expected specEditing');
+    assert.strictEqual(screen.nFeedback, 1, 'should reflect the actual pending count, not 0');
+  });
 });
