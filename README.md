@@ -10,6 +10,8 @@ Planning copilot for coding agents. Blueprint asks the right questions before yo
 
 Works in VS Code, Cursor, and Windsurf.
 
+<video src="https://github.com/imbue-ai/blueprint-vscode/raw/main/resources/ide-demo.mp4" autoplay loop muted playsinline></video>
+
 ## Why Blueprint
 
 Most coding agents rush to code or guess at the plan. Blueprint slows down just enough to ask the right questions. It reads your codebase and asks multiple-choice questions you can answer easily. It catches things you didn't think to think about. The output is a markdown plan any coding agent can execute.
