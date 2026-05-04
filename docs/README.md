@@ -36,7 +36,7 @@ The UI is a single VS Code sidebar webview. The extension host drives a state ma
 - `core/states/` — State machine states (`onboarding`, `prompt`, `generatingPromptQuestions`, `promptQuestions`, `writingSpec`, `startingEditorAgent`, `editorReady`, `editing`)
 - `core/views/` — View overlays (`settings`, `templateEditor`)
 - `core/snapshotManager.ts` — Snapshot history (single source of truth for plan state during editing)
-- `core/session.ts` — `ClaudeSession` wrapper for the Claude SDK; auto-renames sessions with a `[BLUEPRINT]` prefix
+- `core/session.ts` — `ClaudeSession` interface + `LiveClaudeSession` (real Claude SDK wrapper that auto-renames with a `[BLUEPRINT]` prefix). `ClaudeSessionFactory` is the `(name) => ClaudeSession` shape stored on `AppContext.createSession`; tests inject a fake factory in place of the live one. Also exports `RateLimitError` and `isRateLimitError` (structural check that survives the bundle/test module boundary).
 - `core/prompts.ts` — Prompt interpolation, template wrapping, and prompt template management
 - `core/promptDefaults.ts` — Default prompt text constants
 - `core/systemPrompts.ts` — System prompts for each AI session type
