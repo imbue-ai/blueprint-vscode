@@ -10,7 +10,7 @@ Planning copilot for coding agents. Blueprint asks the right questions before yo
 
 Works in VS Code, Cursor, and Windsurf.
 
-<video src="https://github.com/imbue-ai/blueprint-vscode/raw/main/resources/ide-demo.mp4" autoplay loop muted playsinline></video>
+https://github.com/user-attachments/assets/77870e65-5c36-4bd0-bc4a-2d75ea7e7c7e
 
 ## Why Blueprint
 
