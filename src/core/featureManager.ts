@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import type { ClaudeSession } from './session';
-import { RateLimitError } from './session';
+import { isRateLimitError } from './session';
 import { SLUG_SYSTEM_PROMPT } from './systemPrompts';
 
 export const SPEC_DIR = 'blueprint';
@@ -31,7 +31,7 @@ export async function generateFeatureSlug(session: ClaudeSession, text: string, 
 
     slug = sanitizeSlug(rawSlug);
   } catch (error) {
-    if (error instanceof RateLimitError) throw error;
+    if (isRateLimitError(error)) throw error;
     slug = `feature-${Date.now()}`;
   }
 

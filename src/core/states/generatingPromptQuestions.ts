@@ -10,7 +10,7 @@ import type { App, AppContext, AppState } from '../app';
 import { FORK_EDITOR_FROM_QUESTIONS } from '../featureFlags';
 import { getQuestionContinuePrompt, getQuestionPrompt } from '../prompts';
 import type { ClaudeSession } from '../session';
-import { RateLimitError } from '../session';
+import { isRateLimitError } from '../session';
 import { QUESTIONING_SYSTEM_PROMPT } from '../systemPrompts';
 import { buildStreamMessages, copyQuestioningState } from '../utils/questionStreamParsing';
 import { PromptQuestionsState } from './promptQuestions';
@@ -162,7 +162,7 @@ export class GeneratingPromptQuestionsState implements AppState {
         }
       }
     } catch (error) {
-      if (error instanceof RateLimitError) {
+      if (isRateLimitError(error)) {
         app.onRateLimit(error.resetsAt);
         return;
       }
@@ -245,7 +245,7 @@ export class GeneratingPromptQuestionsState implements AppState {
       }
       finalPrompt = result.value;
     } catch (error) {
-      if (error instanceof RateLimitError) {
+      if (isRateLimitError(error)) {
         app.onRateLimit(error.resetsAt);
         return finalPrompt;
       }

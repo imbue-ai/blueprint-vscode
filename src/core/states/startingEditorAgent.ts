@@ -4,7 +4,7 @@ import { cleanupSpecTemplateFile, writeSpecTemplateFile } from '../../utils/spec
 import { createToolCallStreamItem, extractToolUseFromContent } from '../../utils/toolUse';
 import type { App, AppContext, AppState } from '../app';
 import { getEditingPrompt } from '../prompts';
-import { type ClaudeSession, RateLimitError } from '../session';
+import { type ClaudeSession, isRateLimitError } from '../session';
 import { SnapshotManager } from '../snapshotManager';
 import { getSpecEditingSystemPrompt } from '../systemPrompts';
 import { handleJumpToLineNumber } from '../utils/panelQuestionHandlers';
@@ -117,7 +117,7 @@ export class StartingEditorAgentState implements AppState {
         ),
       );
     } catch (error) {
-      if (error instanceof RateLimitError) {
+      if (isRateLimitError(error)) {
         app.onRateLimit(error.resetsAt);
         return;
       }

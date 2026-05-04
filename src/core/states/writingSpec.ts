@@ -13,7 +13,7 @@ import {
   SPEC_PROMPT,
   wrapTemplatePrompt,
 } from '../prompts';
-import { type ClaudeSession, RateLimitError } from '../session';
+import { type ClaudeSession, isRateLimitError } from '../session';
 import { SPEC_START_MARKER, SPEC_WRITING_SYSTEM_PROMPT } from '../systemPrompts';
 import { handleJumpToLineNumber } from '../utils/panelQuestionHandlers';
 import { StartingEditorAgentState } from './startingEditorAgent';
@@ -66,7 +66,7 @@ export class WritingSpecState implements AppState {
         }
         this.prompt = result.value;
       } catch (error) {
-        if (error instanceof RateLimitError) {
+        if (isRateLimitError(error)) {
           this.refining = false;
           app.onRateLimit(error.resetsAt);
           return;
@@ -180,7 +180,7 @@ export class WritingSpecState implements AppState {
         ),
       );
     } catch (error) {
-      if (error instanceof RateLimitError) {
+      if (isRateLimitError(error)) {
         app.onRateLimit(error.resetsAt);
         return;
       }

@@ -204,16 +204,18 @@ suite('Workflow: submit prompt', () => {
 
   /**
    * Goal: a rate-limit rejection during questioning bubbles up via `app.onRateLimit`. Pins the
-   *   propagation contract from the questioning state.
+   *   propagation contract from the questioning state — without it, a 429 mid-stream would be
+   *   swallowed and the user would see the questioning screen freeze instead of the rate-limit
+   *   banner.
    *
-   * SKIPPED — cross-module `instanceof RateLimitError` issue. The fake session throws a
-   *   `RateLimitError` from `out/src/core/session.js` but the GeneratingPromptQuestionsState's
-   *   catch block (running in the bundled `dist/extension.js`) uses `instanceof RateLimitError`
-   *   against a different class object, so the check fails. The handler's logic is covered by
-   *   in-process unit tests; revisit this integration test if we ever add a robust same-module
-   *   error import path (e.g. expose RateLimitError via the activate test API).
+   *   The fake session and the bundled extension load `RateLimitError` from different module
+   *   boundaries (out/ vs dist/), so the catch blocks use a structural `isRateLimitError(err)`
+   *   check on `err.name` rather than `instanceof`. That makes this integration test work
+   *   end-to-end across the bundle boundary.
+   * Process: complete onboarding; script a stream that emits a rate-limit-rejected event;
+   *   submit a prompt; wait for `rateLimitResetsAt` to appear in the broadcast.
    */
-  test.skip('rate-limit during questioning bubbles up to onRateLimit', async () => {
+  test('rate-limit during questioning bubbles up to onRateLimit', async () => {
     const h = await setupHarness();
     try {
       await resetExtensionState(h.app);

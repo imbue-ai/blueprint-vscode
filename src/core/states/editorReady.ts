@@ -8,7 +8,7 @@ import { formatQAPairs } from '../../utils/questionUtils';
 import type { App, AppContext, AppState } from '../app';
 import { buildFeedbackPrompt } from '../feedbackSubmit';
 import type { ClaudeSession } from '../session';
-import { RateLimitError } from '../session';
+import { isRateLimitError } from '../session';
 import type { SnapshotManager } from '../snapshotManager';
 import {
   buildQuestionsPanelRounds,
@@ -97,7 +97,7 @@ export class EditorReadyState implements AppState {
       app,
       prompt,
     ).catch((err) => {
-      if (err instanceof RateLimitError) {
+      if (isRateLimitError(err)) {
         app.onRateLimit(err.resetsAt);
         return;
       }

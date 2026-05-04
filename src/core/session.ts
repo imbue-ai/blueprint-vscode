@@ -29,6 +29,19 @@ export class RateLimitError extends Error {
   }
 }
 
+/**
+ * Structural check for RateLimitError — works across module boundaries.
+ *
+ * The extension is bundled into `dist/extension.js` while tests can import the un-bundled
+ * `out/src/core/session.js`. Each bundle has its own `RateLimitError` class, so a fake error
+ * thrown from the test side and `instanceof RateLimitError` checked from the bundle side would
+ * fail even though both errors are conceptually the same. Comparing `error.name` instead is
+ * stable across the boundary.
+ */
+export function isRateLimitError(err: unknown): err is RateLimitError {
+  return err instanceof Error && err.name === 'RateLimitError';
+}
+
 export function createLiveSessionFactory(workingDir: string, claudePath: string): ClaudeSessionFactory {
   return (name) => new LiveClaudeSession(workingDir, claudePath, name);
 }
