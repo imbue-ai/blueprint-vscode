@@ -3,7 +3,7 @@ import { parsePartialJsonArray } from '../utils/questionParser';
 import { extractToolUseFromContent } from '../utils/toolUse';
 import { getAgenticSpecQuestionContinuePrompt, getAgenticSpecQuestionPrompt } from './prompts';
 import type { ClaudeSession } from './session';
-import { RateLimitError } from './session';
+import { isRateLimitError } from './session';
 import { AGENTIC_SPEC_QUESTIONS_SYSTEM_PROMPT } from './systemPrompts';
 
 function validateSpecQuestion(obj: unknown): SpecQuestion | null {
@@ -122,7 +122,7 @@ async function streamQuestions(
 
     specQuestions = parsePartialJsonArray(accumulatedText, validateSpecQuestion);
   } catch (error) {
-    if (error instanceof RateLimitError) throw error;
+    if (isRateLimitError(error)) throw error;
     console.error('Question generation failed:', error);
   }
 

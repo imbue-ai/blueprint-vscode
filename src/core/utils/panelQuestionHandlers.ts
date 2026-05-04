@@ -10,7 +10,7 @@ import { createToolCallStreamItem } from '../../utils/toolUse';
 import type { App, AppContext } from '../app';
 import { getSpecRefinePrompt } from '../prompts';
 import { continueAgenticQuestions, startAgenticQuestions } from '../questionGeneration';
-import { type ClaudeSession, RateLimitError } from '../session';
+import { type ClaudeSession, isRateLimitError } from '../session';
 import type { SnapshotManager } from '../snapshotManager';
 import { EditingState } from '../states/editing';
 
@@ -89,7 +89,7 @@ export function handleRefreshQuestions(
   }
 
   refreshQuestions(panelState, snapshotManager, questionsSession, specFilePath, app).catch((err) => {
-    if (err instanceof RateLimitError) {
+    if (isRateLimitError(err)) {
       app.onRateLimit(err.resetsAt);
       return;
     }

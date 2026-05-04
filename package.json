@@ -235,11 +235,17 @@
     "build:watch": "node esbuild.config.mjs --watch",
     "vscode:prepublish": "npm run clean && npm run build",
     "package": "vsce package --no-dependencies -o ./dist/blueprint.vsix",
-    "clean": "rm -rf dist",
-    "lint": "eslint src/ --max-warnings 0",
-    "format": "eslint --fix src/",
+    "clean": "rm -rf dist out",
+    "lint": "eslint src/ tests/ --max-warnings 0",
+    "format": "eslint --fix src/ tests/",
     "typecheck": "tsc --noEmit",
-    "check": "npm run lint && npm run typecheck"
+    "check": "npm run lint && npm run typecheck",
+    "compile-tests": "rm -rf out && tsc -p ./tsconfig.test.json",
+    "pretest:integration": "npm run build && npm run compile-tests && mkdir -p .vscode-test/workspace",
+    "test:integration": "npm run pretest:integration && vscode-test",
+    "test:components": "vitest run",
+    "test:components:watch": "vitest",
+    "test": "npm run test:components && npm run test:integration"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.97",
@@ -249,12 +255,18 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^22.10.5",
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
     "@types/vscode": "^1.85.0",
     "@vscode-elements/elements": "^1.16.0",
     "@vscode-elements/react-elements": "^2.4.0",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1",
     "@vscode/vsce": "^3.0.0",
     "esbuild": "^0.20.0",
     "eslint": "^10.0.2",
@@ -263,11 +275,14 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "eslint-plugin-unused-imports": "^4.4.1",
+    "happy-dom": "^20.9.0",
+    "mocha": "^10.8.2",
     "prettier": "^3.8.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-markdown": "^9.1.0",
     "typescript": "^5.7.3",
-    "typescript-eslint": "^8.56.1"
+    "typescript-eslint": "^8.56.1",
+    "vitest": "^2.1.9"
   }
 }

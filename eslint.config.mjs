@@ -42,4 +42,14 @@ export default tseslint.config(
       "@typescript-eslint/consistent-type-imports": "error",
     },
   },
+  {
+    // Test files use patterns that don't fit production code: `(x as any)` casts for stubs,
+    // non-null assertions on `getByText(...)!`, and `expect(...).toBe(undefined)` style
+    // assertions on private fields. Relax those rules in tests only.
+    files: ["tests/**/*.{ts,tsx}"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-non-null-assertion": "off",
+    },
+  },
 );

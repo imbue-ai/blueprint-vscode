@@ -7,19 +7,20 @@ export function getModel(): string {
   return vscode.workspace.getConfiguration('blueprint').get<string>('model') ?? DEFAULT_MODEL;
 }
 
-type ClaudeSessionStatus = 'idle' | 'thinking';
-
-interface ClaudeSessionOptions {
-  workingDir: string;
-  claudePath: string;
-  name: string;
-}
-
 interface PromptOptions {
   systemPrompt?: string;
   allowedTools?: string[];
   includePartialMessages?: boolean;
 }
+
+export interface ClaudeSession {
+  getSessionId(): string | null;
+  prompt(promptText: string, options?: PromptOptions): AsyncGenerator<SDKMessage, void, unknown>;
+  abort(): void;
+  fork(name: string): ClaudeSession;
+}
+
+export type ClaudeSessionFactory = (name: string) => ClaudeSession;
 
 export class RateLimitError extends Error {
   constructor(public readonly resetsAt?: number) {
@@ -28,19 +29,36 @@ export class RateLimitError extends Error {
   }
 }
 
-export class ClaudeSession {
-  private workingDir: string;
-  private claudePath: string;
+/**
+ * Structural check for RateLimitError — works across module boundaries.
+ *
+ * The extension is bundled into `dist/extension.js` while tests can import the un-bundled
+ * `out/src/core/session.js`. Each bundle has its own `RateLimitError` class, so a fake error
+ * thrown from the test side and `instanceof RateLimitError` checked from the bundle side would
+ * fail even though both errors are conceptually the same. Comparing `error.name` instead is
+ * stable across the boundary.
+ */
+export function isRateLimitError(err: unknown): err is RateLimitError {
+  return err instanceof Error && err.name === 'RateLimitError';
+}
+
+export function createLiveSessionFactory(workingDir: string, claudePath: string): ClaudeSessionFactory {
+  return (name) => new LiveClaudeSession(workingDir, claudePath, name);
+}
+
+class LiveClaudeSession implements ClaudeSession {
   private sessionId: string | null = null;
   private currentQuery: Query | null = null;
-  private _status: ClaudeSessionStatus = 'idle';
+  private status: 'idle' | 'thinking' = 'idle';
   private pendingForkFrom: string | null = null;
-  private name: string;
+  private readonly name: string;
 
-  constructor(options: ClaudeSessionOptions) {
-    this.workingDir = options.workingDir;
-    this.claudePath = options.claudePath;
-    this.name = `[BLUEPRINT] ${options.name}`;
+  constructor(
+    private readonly workingDir: string,
+    private readonly claudePath: string,
+    name: string,
+  ) {
+    this.name = `[BLUEPRINT] ${name}`;
   }
 
   getSessionId(): string | null {
@@ -48,11 +66,11 @@ export class ClaudeSession {
   }
 
   async *prompt(promptText: string, options: PromptOptions = {}): AsyncGenerator<SDKMessage, void, unknown> {
-    if (this._status === 'thinking') {
+    if (this.status === 'thinking') {
       throw new Error('Session is already generating');
     }
 
-    this._status = 'thinking';
+    this.status = 'thinking';
 
     const queryOptions: Options = {
       cwd: this.workingDir,
@@ -87,7 +105,7 @@ export class ClaudeSession {
         yield message;
       }
     } finally {
-      this._status = 'idle';
+      this.status = 'idle';
       this.currentQuery = null;
       if (this.sessionId && this.name) {
         this.renameWithRetry(this.sessionId, this.name);
@@ -99,7 +117,7 @@ export class ClaudeSession {
     if (this.currentQuery) {
       this.currentQuery.close();
       this.currentQuery = null;
-      this._status = 'idle';
+      this.status = 'idle';
     }
   }
 
@@ -118,11 +136,7 @@ export class ClaudeSession {
   }
 
   fork(name: string): ClaudeSession {
-    const forked = new ClaudeSession({
-      workingDir: this.workingDir,
-      claudePath: this.claudePath,
-      name,
-    });
+    const forked = new LiveClaudeSession(this.workingDir, this.claudePath, name);
     if (this.sessionId) {
       forked.pendingForkFrom = this.sessionId;
     } else if (this.pendingForkFrom) {

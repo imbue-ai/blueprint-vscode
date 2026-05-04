@@ -6,7 +6,7 @@ import type { AgentStatus, AppScreen, FeedbackItem } from '../../types/screens';
 import { createToolCallStreamItem, extractToolUseFromContent } from '../../utils/toolUse';
 import type { App, AppContext, AppState } from '../app';
 import type { ClaudeSession } from '../session';
-import { RateLimitError } from '../session';
+import { isRateLimitError } from '../session';
 import type { SnapshotManager } from '../snapshotManager';
 import { getSpecEditingSystemPrompt } from '../systemPrompts';
 import { buildQuestionsPanelRounds } from '../utils/panelQuestionHandlers';
@@ -109,7 +109,7 @@ export class EditingState implements AppState {
         ),
       );
     } catch (error) {
-      if (error instanceof RateLimitError) {
+      if (isRateLimitError(error)) {
         app.onRateLimit(error.resetsAt);
         return;
       }

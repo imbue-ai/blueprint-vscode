@@ -9,8 +9,8 @@ import { createToolCallStreamItem, extractToolUseFromContent } from '../../utils
 import type { App, AppContext, AppState } from '../app';
 import { FORK_EDITOR_FROM_QUESTIONS } from '../featureFlags';
 import { getQuestionContinuePrompt, getQuestionPrompt } from '../prompts';
-import { RateLimitError } from '../session';
-import { ClaudeSession } from '../session';
+import type { ClaudeSession } from '../session';
+import { isRateLimitError } from '../session';
 import { QUESTIONING_SYSTEM_PROMPT } from '../systemPrompts';
 import { buildStreamMessages, copyQuestioningState } from '../utils/questionStreamParsing';
 import { PromptQuestionsState } from './promptQuestions';
@@ -85,11 +85,7 @@ export class GeneratingPromptQuestionsState implements AppState {
   }
 
   private async startQuestioning(app: App): Promise<void> {
-    this.session = new ClaudeSession({
-      claudePath: this.ctx.claudePath,
-      workingDir: this.ctx.workingDir,
-      name: 'Prompt questions',
-    });
+    this.session = this.ctx.createSession('Prompt questions');
     this.specTemplatePath = writeSpecTemplateFile(this.specTemplate);
     await this.streamResponse(app, getQuestionPrompt(this.currentPrompt, this.specTemplatePath));
     if (!this.interrupted) {
@@ -166,7 +162,7 @@ export class GeneratingPromptQuestionsState implements AppState {
         }
       }
     } catch (error) {
-      if (error instanceof RateLimitError) {
+      if (isRateLimitError(error)) {
         app.onRateLimit(error.resetsAt);
         return;
       }
@@ -249,7 +245,7 @@ export class GeneratingPromptQuestionsState implements AppState {
       }
       finalPrompt = result.value;
     } catch (error) {
-      if (error instanceof RateLimitError) {
+      if (isRateLimitError(error)) {
         app.onRateLimit(error.resetsAt);
         return finalPrompt;
       }

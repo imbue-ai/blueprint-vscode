@@ -52,6 +52,15 @@ export function activate(context: vscode.ExtensionContext) {
   sidebar.onDidBecomeVisible(() => {
     editor.openSpec();
   });
+
+  return {
+    __test: {
+      app,
+      setSessionFactory: (factory: typeof app.ctx.createSession) => {
+        app.ctx.createSession = factory;
+      },
+    },
+  };
 }
 
 function updateContextKeys(data: ExtensionData): void {
