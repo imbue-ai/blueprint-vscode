@@ -8,7 +8,7 @@
 
 Planning copilot for coding agents. Blueprint asks the right questions before you write code, then hands your agent a plan it can execute in one shot.
 
-[Install from the VS Code marketplace.](https://marketplace.visualstudio.com/items?itemName=Imbue.imbue-blueprint) Works in VS Code, Cursor, and Windsurf.
+Install from the [VS Code marketplace](https://marketplace.visualstudio.com/items?itemName=Imbue.imbue-blueprint). For Cursor and Windsurf, download the [latest `.vsix`](https://github.com/imbue-ai/blueprint-vscode/releases/latest/download/blueprint.vsix).
 
 https://github.com/user-attachments/assets/77870e65-5c36-4bd0-bc4a-2d75ea7e7c7e
 
@@ -25,6 +25,8 @@ Most coding agents rush to code or guess at the plan. Blueprint slows down just 
 ## Install
 
 Install **[Blueprint](https://marketplace.visualstudio.com/items?itemName=Imbue.imbue-blueprint)** from the VS Code marketplace.
+
+**Cursor and Windsurf:** Download the [latest `.vsix`](https://github.com/imbue-ai/blueprint-vscode/releases/latest/download/blueprint.vsix), then install it with `Extensions: Install from VSIX...` from the command palette.
 
 ## Quickstart
 
