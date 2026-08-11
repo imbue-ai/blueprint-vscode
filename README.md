@@ -56,7 +56,7 @@ Prefer the terminal? Blueprint also ships as agent-agnostic skills for Claude Co
 
 - [@Imbue_AI on X](https://x.com/imbue_ai)
 - [Subscribe to our newsletter](https://tryimbue.link/get-email-updates)
-- [Read the blog](https://imbue.com/blog)
+- [Read the blog](https://imbue.com/blog/blueprint)
 
 ## Related reading
 
